@@ -1,0 +1,42 @@
+name: Turnip PR build
+
+on:
+  pull_request:
+    branches: [turnip]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: turnip-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  names:
+    runs-on: ubuntu-latest
+    outputs:
+      variant: ${{ steps.names.outputs.variant }}
+      artifact: ${{ steps.names.outputs.artifact }}
+    steps:
+      - id: names
+        env:
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          short=${SHA:0:8}
+          if [ -n "$PR" ]; then
+            echo "variant=pr-$PR" >> "$GITHUB_OUTPUT"
+            echo "artifact=turnip-pr-$PR-$short" >> "$GITHUB_OUTPUT"
+          else
+            echo "variant=pr-$short" >> "$GITHUB_OUTPUT"
+            echo "artifact=turnip-$short" >> "$GITHUB_OUTPUT"
+          fi
+
+  turnip:
+    needs: names
+    uses: GameNative/turnip-ci/.github/workflows/build.yml@main
+    with:
+      use_checkout: true
+      variant_name: ${{ needs.names.outputs.variant }}
+      artifact_name: ${{ needs.names.outputs.artifact }}
