@@ -48,3 +48,5 @@ The artifact download is a zip that contains the driver zip. Extract only the ou
 ## Local build
 
 `ci/build.sh` needs git, curl, unzip, zip, meson, ninja, python3 (mako, pyyaml, packaging), flex, bison, glslangValidator and pkg-config. It downloads the NDK (`NDK_VERSION`, default `r28c`) into `ci/work/` and writes the zip to `ci/out/`.
+
+CI smoke test.
