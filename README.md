@@ -25,3 +25,5 @@ turnip-ci is private, and the `GITHUB_TOKEN` of this repository cannot read it. 
 5. Merge the pull request when the driver works on the target devices.
 
 `variants/` records the community build matrix (which trees and patches each GPU family needs) as data for later automation.
+
+This line is a CI smoke test.
