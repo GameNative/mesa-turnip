@@ -40,3 +40,5 @@ jobs:
       use_checkout: true
       variant_name: ${{ needs.names.outputs.variant }}
       artifact_name: ${{ needs.names.outputs.artifact }}
+    secrets:
+      turnip_ci_token: ${{ secrets.TURNIP_CI_TOKEN }}
