@@ -1,4 +1,4 @@
-# Community Turnip build matrix. Data only: no workflow reads this file yet.
+# Community Turnip build matrix. turnip.yml builds a row when you dispatch it with variant=<id>.
 # status: verified | documentation
 
 upstream: &upstream

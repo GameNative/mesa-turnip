@@ -1,27 +1,50 @@
 # mesa-turnip
 
-GameNative's Turnip tree. Turnip is Mesa's Vulkan driver for Qualcomm Adreno GPUs (`src/freedreno/vulkan`). This repository follows upstream Mesa `main` and keeps the GameNative patches on top. Each pull request builds an AdrenoTools zip that you can import into GameNative.
+GameNative's Turnip tree and its CI, in one repository. Turnip is Mesa's Vulkan driver for Qualcomm Adreno GPUs (`src/freedreno/vulkan`). This repository follows upstream Mesa `main`, keeps the GameNative patches on top, and builds AdrenoTools zips that you import into GameNative.
 
 The upstream Mesa README is [README.rst](README.rst).
 
 ## Branches
 
-- `turnip` (default): upstream Mesa plus our patches. All work goes here through pull requests.
+- `turnip` (default): upstream Mesa plus our patches and CI. All work goes here through pull requests.
 - `upstream-main`: a mirror of `https://gitlab.freedesktop.org/mesa/mesa.git` `main`. The sync workflow force-pushes it. Never commit to it.
 
-## Workflows
+## Files
 
-- `.github/workflows/turnip-pr.yml` runs on each pull request to `turnip`, and you can also start it from the Actions tab. It calls the reusable build in [GameNative/turnip-ci](https://github.com/GameNative/turnip-ci) (`build.yml` with `use_checkout: true`) and builds the PR's tree. The zip is uploaded as the artifact `turnip-pr-<number>-<short sha>`. The driver shows in GameNative as `pr-<number>`.
-turnip-ci is private, and the `GITHUB_TOKEN` of this repository cannot read it. Thus the repository secret `TURNIP_CI_TOKEN` must contain a token that can read `GameNative/turnip-ci` (fine-grained, Contents: read).
+- `ci/build.sh`: builds `libvulkan_freedreno.so` with the Android NDK and packs it with `meta.json` into a zip. By default it builds this checkout. Set `MESA_REPO` and/or `MESA_REF` to clone and build another tree, and `PATCHES` to apply patches.
+- `patches/`: patch files that a build can apply. See [patches/README.md](patches/README.md).
+- `variants/matrix.yml`: the community builds (tree, ref and patches for each GPU family). See [variants/README.md](variants/README.md).
+- `.github/workflows/turnip.yml`: the build workflow.
+- `.github/workflows/upstream-sync.yml`: runs every day. It mirrors upstream `main` to `upstream-main` and opens or updates the pull request "Sync with upstream Mesa main". Merge that pull request with a merge commit, not squash or rebase.
 
-- `.github/workflows/upstream-sync.yml` runs every day and from the Actions tab. It mirrors upstream `main` to `upstream-main`. If `upstream-main` has commits that are not in `turnip`, it opens the pull request "Sync with upstream Mesa main" (or updates the body of the open one). Merge that pull request with a merge commit, not squash or rebase.
+## Pull request builds
 
-## Adding a patch
+Each pull request to `turnip` builds the PR's tree. The artifact is `turnip-pr-<number>-<mesa version>-<short sha>`, and the driver shows in GameNative as `pr-<number>`.
 
 1. Make a branch from `turnip`: `git checkout -b fix-something origin/turnip`.
 2. Commit the change and open a pull request to `turnip`.
-3. When "Turnip PR build" is complete, download the zip: `gh run download -R GameNative/mesa-turnip <run-id>`, or use the artifact on the run page. The zip is in a second zip; extract only the outer one.
-4. Copy the zip to the device. In GameNative, go to **Settings > Emulation > Driver Manager > Import ZIP from device**. Then select the driver `pr-<number>` in the game's or container's graphics driver settings.
-5. Merge the pull request when the driver works on the target devices.
+3. When the "Turnip" run is complete, download the artifact from the run page or with `gh run download -R GameNative/mesa-turnip <run-id>`.
+4. Merge the pull request when the driver works on the target devices.
 
-`variants/` records the community build matrix (which trees and patches each GPU family needs) as data for later automation.
+## Building a variant or another tree
+
+Start "Turnip" from the Actions tab, or with `gh workflow run turnip.yml -R GameNative/mesa-turnip -f variant=a8xx-gen8`. Inputs:
+
+- `variant`: a row `id` from `variants/matrix.yml`. Empty builds the `turnip` checkout.
+- `mesa_repo`, `mesa_ref`: build this tree and ref instead (they also override the variant's values).
+- `patches`: patch URLs or `patches/` paths, one per line. They replace the variant's patches.
+- `variant_name`: the driver name in GameNative. The default is the variant, or `checkout`.
+
+The artifact is `turnip-<variant>-<mesa version>-<short sha>`. A tag `v*` builds the tagged commit and attaches the zip to a GitHub release.
+
+## Adding a patch
+
+Commit Turnip changes to `turnip` through a pull request. For a patch that only some builds use, put the file in `patches/` and list it in the `patches` input or in a variant row.
+
+## Importing into GameNative
+
+The artifact download is a zip that contains the driver zip. Extract only the outer zip. Copy the inner zip (`libvulkan_freedreno.so` + `meta.json`) to the device. In GameNative, go to **Settings > Emulation > Driver Manager > Import ZIP from device**. Then select the driver in the game's or container's graphics driver settings.
+
+## Local build
+
+`ci/build.sh` needs git, curl, unzip, zip, meson, ninja, python3 (mako, pyyaml, packaging), flex, bison, glslangValidator and pkg-config. It downloads the NDK (`NDK_VERSION`, default `r28c`) into `ci/work/` and writes the zip to `ci/out/`.

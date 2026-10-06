@@ -1,6 +1,6 @@
 # Variants
 
-`matrix.yml` lists the Turnip builds that the community uses, and the GPUs and devices that each one is for. It is data only. No workflow reads it yet. A later automation step will build each row with turnip-ci (`mesa_repo`, `mesa_ref`, `patches`, `variant_name`).
+`matrix.yml` lists the Turnip builds that the community uses, and the GPUs and devices that each one is for. Start `.github/workflows/turnip.yml` with `variant=<id>` to build a row: it uses `source.repo`, `source.ref` and the `url` of each patch. A row that has a patch with no `url` fails unless you give the `patches` input.
 
 Fields in each row:
 
